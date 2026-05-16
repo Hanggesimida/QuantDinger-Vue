@@ -416,7 +416,12 @@ export default {
         if (t.profit === null || t.profit === undefined || t.profit === '') return false
         return true
       })
-      const profits = settled.map(t => parseFloat(t.profit)).filter(n => !isNaN(n))
+      const profits = settled.map(t => {
+        const p = parseFloat(t.profit)
+        if (isNaN(p)) return NaN
+        const c = parseFloat(t.commission)
+        return p - (isNaN(c) ? 0 : c)
+      }).filter(n => !isNaN(n))
       const wins = profits.filter(p => p > 0).length
       const losses = profits.filter(p => p < 0).length
       const decided = wins + losses

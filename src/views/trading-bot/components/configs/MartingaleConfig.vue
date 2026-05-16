@@ -111,6 +111,28 @@
       </a-radio-group>
       <div class="direction-hint">{{ directionHint }}</div>
     </a-form-model-item>
+
+    <a-divider>{{ $t('trading-bot.martingale.riskGuardsTitle') }}</a-divider>
+    <a-form-model-item :label="$t('trading-bot.martingale.waterfallProtection')">
+      <a-switch v-model="form.waterfallProtection" @change="emit" />
+      <div class="field-hint">{{ $t('trading-bot.martingale.waterfallProtectionHint') }}</div>
+    </a-form-model-item>
+    <a-form-model-item
+      v-if="form.waterfallProtection"
+      :label="$t('trading-bot.martingale.waterfallDropPct')"
+    >
+      <a-input-number
+        v-model="form.waterfallDropPct"
+        :min="0.5"
+        :max="30"
+        :step="0.5"
+        style="width: 100%"
+        :formatter="v => `${v}%`"
+        :parser="v => v.replace('%', '')"
+        @change="emit"
+      />
+      <div class="field-hint">{{ $t('trading-bot.martingale.waterfallDropPctHint') }}</div>
+    </a-form-model-item>
     <div
       class="config-summary"
       v-if="firstOrderRaw > 0 && form.multiplier && form.maxLayers"
@@ -157,7 +179,9 @@ export default {
         trailingTpEnabled: this.value.trailingTpEnabled === true,
         trailingTpCallbackPct: this.value.trailingTpCallbackPct != null
           ? this.value.trailingTpCallbackPct
-          : 0.8
+          : 0.8,
+        waterfallProtection: this.value.waterfallProtection !== false,
+        waterfallDropPct: this.toWaterfallPctUi(this.value.waterfallDropPct, 4)
       },
       rules: {
         multiplier: [{ required: true, message: this.$t('trading-bot.martingale.multiplierReq'), trigger: 'change' }],
@@ -326,10 +350,19 @@ export default {
     }
   },
   methods: {
+    toWaterfallPctUi (raw, defaultPct) {
+      if (raw == null || raw === '') return defaultPct
+      const n = Number(raw)
+      if (!Number.isFinite(n)) return defaultPct
+      return n > 0 && n <= 1 ? n * 100 : n
+    },
     emit () {
       const payload = {
         ...this.form,
-        initialAmount: this.firstOrderRaw
+        initialAmount: this.firstOrderRaw,
+        waterfallDropPct: this.form.waterfallProtection
+          ? Number(this.form.waterfallDropPct || 4) / 100
+          : undefined
       }
       this.$emit('input', payload)
       this.$emit('change', payload)

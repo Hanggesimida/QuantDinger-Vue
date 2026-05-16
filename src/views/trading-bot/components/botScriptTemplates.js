@@ -69,9 +69,41 @@ def on_init(ctx):
     ctx.log("Grid anchor @ %.6f | buy_pending=%d sell_pending=%d [%.6f ~ %.6f]" % (anchor, len(bp), len(sp), LOWER, UPPER))
 
 def on_bar(ctx, bar):
-    price = bar.close
-    if price < LOWER or price > UPPER:
+    if ctx.param("waterfall_pause", False):
         return
+
+    price = bar.close
+    upper = float(ctx.param("upperPrice", UPPER) or UPPER)
+    lower = float(ctx.param("lowerPrice", LOWER) or LOWER)
+    if price < lower or price > upper:
+        return
+
+    bounds_sig = (round(upper, 8), round(lower, 8), GRIDS, MODE)
+    if ctx.param("_bounds_sig") != bounds_sig:
+        ctx._params["_bounds_sig"] = bounds_sig
+        if MODE == "geometric" and lower > 0:
+            r = (upper / lower) ** (1.0 / GRIDS)
+            levels = [lower * (r ** i) for i in range(GRIDS + 1)]
+        else:
+            step = (upper - lower) / GRIDS
+            levels = [lower + step * i for i in range(GRIDS + 1)]
+        anchor = ctx.param("anchor_price", REF_PRICE if REF_PRICE > 0 else (lower + upper) / 2.0)
+        bp, sp = [], []
+        for i, lv in enumerate(levels):
+            if lv < anchor and DIRECTION in ("neutral", "long"):
+                bp.append(i)
+            elif lv > anchor and DIRECTION in ("neutral", "short"):
+                sp.append(i)
+        ctx._params["bp"] = bp
+        ctx._params["sp"] = sp
+
+    levels = []
+    if MODE == "geometric" and lower > 0:
+        r = (upper / lower) ** (1.0 / GRIDS)
+        levels = [lower * (r ** i) for i in range(GRIDS + 1)]
+    else:
+        step = (upper - lower) / GRIDS
+        levels = [lower + step * i for i in range(GRIDS + 1)]
 
     prev_price = ctx.param("prev_price", -1.0)
     anchor = ctx.param("anchor_price", REF_PRICE if REF_PRICE > 0 else (LOWER + UPPER) / 2.0)
@@ -88,14 +120,14 @@ def on_bar(ctx, bar):
     bp = set(ctx.param("bp", []))
     sp = set(ctx.param("sp", []))
 
-    for i, lv in enumerate(LEVELS):
+    for i, lv in enumerate(levels):
         if prev_price > lv >= price and i in bp:
             # BUY: 优先减空头,否则开/加多头(需检查预算)
             if short_exp > 0:
                 ctx.buy(price=lv, amount=AMT)
                 short_exp = max(0.0, short_exp - AMT)
                 bp.discard(i)
-                if i + 1 < len(LEVELS):
+                if i + 1 < len(levels):
                     sp.add(i + 1)
                 ctx.log("BUY(cover short) grid %d @ %.6f short_exp=%.2f" % (i, lv, short_exp))
             else:
@@ -105,7 +137,7 @@ def on_bar(ctx, bar):
                 ctx.buy(price=lv, amount=AMT)
                 long_exp += AMT
                 bp.discard(i)
-                if i + 1 < len(LEVELS):
+                if i + 1 < len(levels):
                     sp.add(i + 1)
                 ctx.log("BUY(open long) grid %d @ %.6f long_exp=%.2f" % (i, lv, long_exp))
         elif prev_price < lv <= price and i in sp:
@@ -193,6 +225,8 @@ def on_bar(ctx, bar):
     now        = int(_time.time())
 
     if not has_pos and layer == 0:
+        if ctx.param("waterfall_pause", False):
+            return
         if not _budget_ok(0, INIT_AMT):
             ctx.log("Budget exhausted (%.2f quote), skip opening" % BUDGET)
             return
@@ -290,7 +324,7 @@ def on_bar(ctx, bar):
         _reset_state(ctx)
         return
 
-    if add_hit:
+    if add_hit and not ctx.param("waterfall_pause", False):
         amt = INIT_AMT * (MULTIPLIER ** layer)
         if not _budget_ok(cost, amt):
             ctx.log("Budget cap reached (cost=%.2f + amt=%.2f > %.2f quote), skip add layer %d" % (cost, amt, BUDGET, layer + 1))

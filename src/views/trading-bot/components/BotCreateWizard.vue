@@ -931,8 +931,14 @@ export default {
         }
         return map[value] || value
       }
-      if (key === 'dipBuyEnabled' || key === 'trailingTpEnabled') {
+      if (key === 'dipBuyEnabled' || key === 'trailingTpEnabled' || key === 'adaptiveBounds' || key === 'waterfallProtection') {
         return value ? this.fallbackLabel('开启', 'Enabled') : this.fallbackLabel('关闭', 'Disabled')
+      }
+      if (key === 'waterfallDropPct') {
+        const pct = Number(value)
+        if (!Number.isFinite(pct)) return value
+        const display = pct <= 1 ? pct * 100 : pct
+        return `${display}%`
       }
       if (['priceDropPct', 'takeProfitPct', 'stopLossPct', 'dipThreshold', 'positionPct',
            'trailingTpActivationPct', 'trailingTpCallbackPct'].includes(key)) {

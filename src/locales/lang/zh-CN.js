@@ -262,6 +262,15 @@ const locale = {
   'trading-bot.grid.limitOrderHint': 'Maker 挂单，手续费更低（通常 0~0.02%），未成交会自动回退市价',
   'trading-bot.grid.marketOrderHint': 'Taker 市价成交，手续费较高（通常 0.04~0.1%），频繁交易会累积大额手续费',
   'trading-bot.grid.autoCalcHint': '已根据投入金额自动计算，手动修改后将取消联动',
+  'trading-bot.grid.riskGuardsTitle': '边界与风控',
+  'trading-bot.grid.adaptiveBounds': '自适应边界',
+  'trading-bot.grid.adaptiveBoundsHint': '根据近期波动（ATR）自动平移上下轨，价格贴边时扩展区间，减少长期单边行情跑出网格。',
+  'trading-bot.grid.adaptiveAtrMult': 'ATR 宽度倍数',
+  'trading-bot.grid.adaptiveAtrMultHint': '越大则上下轨越宽，网格更稀疏；默认 2.0。',
+  'trading-bot.grid.waterfallProtection': '防瀑布（急跌暂停）',
+  'trading-bot.grid.waterfallProtectionHint': '短时急跌时暂停新开仓，避免单边瀑布行情连续抄底；冷却结束后自动恢复。',
+  'trading-bot.grid.waterfallDropPct': '触发回撤幅度',
+  'trading-bot.grid.waterfallDropPctHint': '相对近期高点的回撤达到该比例时触发暂停（默认 3%）。',
 
   // 马丁格尔配置
   'trading-bot.martingale.initialAmount': '首单金额',
@@ -288,6 +297,11 @@ const locale = {
   'trading-bot.martingale.short': '做空（逢涨加仓）',
   'trading-bot.martingale.longHint': '价格下跌时逐层加仓买入，反弹到均价上方止盈',
   'trading-bot.martingale.shortHint': '价格上涨时逐层加仓卖出，回落到均价下方止盈',
+  'trading-bot.martingale.riskGuardsTitle': '风控',
+  'trading-bot.martingale.waterfallProtection': '防瀑布（急跌暂停加仓）',
+  'trading-bot.martingale.waterfallProtectionHint': '短时急跌时暂停首单与加仓，避免瀑布行情连续摊低成本；止盈/止损仍可执行。',
+  'trading-bot.martingale.waterfallDropPct': '触发回撤幅度',
+  'trading-bot.martingale.waterfallDropPctHint': '相对近期高点的回撤达到该比例时触发暂停（默认 4%）。',
 
   // 趋势跟随配置
   'trading-bot.trend.maPeriod': '均线周期',

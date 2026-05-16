@@ -182,6 +182,20 @@ export default {
       }
       return formatBrowserLocalDateTime(time, { locale: loc, fallback: '--' })
     },
+    /** Net realised P&L: gross ``profit`` minus exchange-synced ``commission``. */
+    netTradePnl (row) {
+      const raw = this.pickTradeProfitRaw(row)
+      if (raw === null || raw === undefined || raw === '') return null
+      const p = parseFloat(raw)
+      if (isNaN(p)) return null
+      let fee = 0
+      const cm = row && (row.commission != null ? row.commission : row.fee)
+      if (cm !== null && cm !== undefined && cm !== '') {
+        const c = parseFloat(cm)
+        if (!isNaN(c)) fee = c
+      }
+      return p - fee
+    },
     pickTradeProfitRaw (row) {
       if (!row || typeof row !== 'object') return null
       const keys = [
@@ -230,9 +244,9 @@ export default {
       return t !== key ? t : '—'
     },
     profitToneClass (record) {
-      const raw = this.pickTradeProfitRaw(record)
-      if (raw === null || raw === undefined || raw === '') return 'ta-pnl-neutral'
-      const n = parseFloat(raw)
+      const net = this.netTradePnl(record)
+      if (net === null) return 'ta-pnl-neutral'
+      const n = net
       if (isNaN(n)) return 'ta-pnl-neutral'
       const ty = String(record && record.type || '').toLowerCase()
       const openTypes = ['open_long', 'open_short', 'add_long', 'add_short', 'buy']
@@ -304,12 +318,11 @@ export default {
     },
     // 格式化盈亏（处理信号模式下没有实盘的情况）
     formatProfit (record) {
-      const value = this.pickTradeProfitRaw(record)
+      const net = this.netTradePnl(record)
       // 如果是信号模式（没有实盘交易），profit为0或null时显示--
-      // 判断依据：如果是开仓信号且profit为0，或者record.is_signal_only为true
-      if (value === null || value === undefined) return '--'
+      if (net === null) return '--'
 
-      const numValue = parseFloat(value)
+      const numValue = net
 
       // 如果值为0且是开仓信号（open_long/open_short），显示--
       // 因为开仓时还没有盈亏

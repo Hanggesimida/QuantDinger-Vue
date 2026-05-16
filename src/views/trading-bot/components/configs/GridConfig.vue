@@ -70,6 +70,46 @@
       </a-radio-group>
       <div class="direction-hint">{{ orderModeHint }}</div>
     </a-form-model-item>
+
+    <a-divider>{{ $t('trading-bot.grid.riskGuardsTitle') }}</a-divider>
+    <a-form-model-item :label="$t('trading-bot.grid.adaptiveBounds')">
+      <a-switch v-model="form.adaptiveBounds" @change="emit" />
+      <div class="direction-hint">{{ $t('trading-bot.grid.adaptiveBoundsHint') }}</div>
+    </a-form-model-item>
+    <a-form-model-item
+      v-if="form.adaptiveBounds"
+      :label="$t('trading-bot.grid.adaptiveAtrMult')"
+    >
+      <a-input-number
+        v-model="form.adaptiveAtrMult"
+        :min="0.5"
+        :max="5"
+        :step="0.1"
+        style="width: 100%"
+        @change="emit"
+      />
+      <div class="direction-hint">{{ $t('trading-bot.grid.adaptiveAtrMultHint') }}</div>
+    </a-form-model-item>
+    <a-form-model-item :label="$t('trading-bot.grid.waterfallProtection')">
+      <a-switch v-model="form.waterfallProtection" @change="emit" />
+      <div class="direction-hint">{{ $t('trading-bot.grid.waterfallProtectionHint') }}</div>
+    </a-form-model-item>
+    <a-form-model-item
+      v-if="form.waterfallProtection"
+      :label="$t('trading-bot.grid.waterfallDropPct')"
+    >
+      <a-input-number
+        v-model="form.waterfallDropPct"
+        :min="0.5"
+        :max="30"
+        :step="0.5"
+        style="width: 100%"
+        :formatter="v => `${v}%`"
+        :parser="v => v.replace('%', '')"
+        @change="emit"
+      />
+      <div class="direction-hint">{{ $t('trading-bot.grid.waterfallDropPctHint') }}</div>
+    </a-form-model-item>
     <div
       class="config-summary"
       v-if="form.upperPrice && form.lowerPrice && form.gridCount"
@@ -103,7 +143,11 @@ export default {
         amountPerGrid: this.value.amountPerGrid || null,
         gridMode: this.value.gridMode || 'arithmetic',
         gridDirection: this.value.gridDirection || 'neutral',
-        orderMode: this.value.orderMode || 'maker'
+        orderMode: this.value.orderMode || 'maker',
+        adaptiveBounds: this.value.adaptiveBounds !== false,
+        adaptiveAtrMult: this.value.adaptiveAtrMult != null ? this.value.adaptiveAtrMult : 2,
+        waterfallProtection: this.value.waterfallProtection !== false,
+        waterfallDropPct: this.toWaterfallPctUi(this.value.waterfallDropPct, 3)
       },
       capitalLinked: !this.value.amountPerGrid,
       rules: {
@@ -179,6 +223,12 @@ export default {
     }
   },
   methods: {
+    toWaterfallPctUi (raw, defaultPct) {
+      if (raw == null || raw === '') return defaultPct
+      const n = Number(raw)
+      if (!Number.isFinite(n)) return defaultPct
+      return n > 0 && n <= 1 ? n * 100 : n
+    },
     handleAmountManualChange () {
       this.capitalLinked = false
       this.emit()
@@ -211,8 +261,14 @@ export default {
       callback()
     },
     emit () {
-      this.$emit('input', { ...this.form })
-      this.$emit('change', { ...this.form })
+      const payload = {
+        ...this.form,
+        waterfallDropPct: this.form.waterfallProtection
+          ? Number(this.form.waterfallDropPct || 3) / 100
+          : undefined
+      }
+      this.$emit('input', payload)
+      this.$emit('change', payload)
     },
     validate () {
       return new Promise((resolve, reject) => {
