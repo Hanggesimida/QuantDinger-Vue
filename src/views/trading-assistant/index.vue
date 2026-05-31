@@ -247,7 +247,7 @@
                                 <a-icon type="edit" />
                                 {{ $t('trading-assistant.editStrategy') }}
                               </a-menu-item>
-                              <a-menu-item key="backtest">
+                              <a-menu-item v-if="showStrategyListBacktest" key="backtest">
                                 <a-icon type="experiment" />
                                 {{ $t('dashboard.indicator.action.backtest') }}
                               </a-menu-item>
@@ -340,7 +340,7 @@
                             <a-icon type="edit" />
                             {{ $t('trading-assistant.editStrategy') }}
                           </a-menu-item>
-                          <a-menu-item key="backtest">
+                          <a-menu-item v-if="showStrategyListBacktest" key="backtest">
                             <a-icon type="experiment" />
                             {{ $t('dashboard.indicator.action.backtest') }}
                           </a-menu-item>
@@ -1803,6 +1803,10 @@ export default {
     },
     isScriptStrategiesOnlyPage () {
       return !!(this.$route.meta && this.$route.meta.scriptStrategiesOnly)
+    },
+    /** Script 策略页暂无可用回测 UI（/backtest-center 已重定向），隐藏列表回测入口 */
+    showStrategyListBacktest () {
+      return !this.isScriptStrategiesOnlyPage
     },
     isIndicatorSignalOnlyPage () {
       return !!(this.$route.meta && this.$route.meta.indicatorSignalOnly)
