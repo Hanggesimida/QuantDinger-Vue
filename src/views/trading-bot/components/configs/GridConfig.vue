@@ -129,10 +129,11 @@
         :min="0.5"
         :max="30"
         :step="0.5"
+        :precision="2"
         style="width: 100%"
-        :formatter="v => `${v}%`"
-        :parser="v => v.replace('%', '')"
-        @change="emit"
+        :formatter="formatWaterfallPct"
+        :parser="parseWaterfallPct"
+        @change="onWaterfallPctChange"
       />
       <div class="direction-hint">{{ $t('trading-bot.grid.waterfallDropPctHint') }}</div>
     </a-form-model-item>
@@ -153,6 +154,13 @@
 </template>
 
 <script>
+import {
+  formatPercentDisplay,
+  parsePercentInput,
+  ratioOrPercentToUiPercent,
+  roundTo
+} from '@/utils/numberFormat'
+
 export default {
   name: 'GridConfig',
   props: {
@@ -175,7 +183,7 @@ export default {
         adaptiveBounds: this.value.adaptiveBounds !== false,
         adaptiveAtrMult: this.value.adaptiveAtrMult != null ? this.value.adaptiveAtrMult : 2,
         waterfallProtection: this.value.waterfallProtection !== false,
-        waterfallDropPct: this.toWaterfallPctUi(this.value.waterfallDropPct, 3)
+        waterfallDropPct: ratioOrPercentToUiPercent(this.value.waterfallDropPct, 3)
       },
       capitalLinked: !this.value.amountPerGrid,
       rules: {
@@ -215,6 +223,15 @@ export default {
         if (val === 'spot' && this.form.gridDirection !== 'long') {
           this.form.gridDirection = 'long'
           this.emit()
+        }
+      }
+    },
+    value: {
+      deep: true,
+      handler (val) {
+        if (!val || typeof val !== 'object') return
+        if (val.waterfallDropPct != null && val.waterfallDropPct !== '') {
+          this.form.waterfallDropPct = ratioOrPercentToUiPercent(val.waterfallDropPct, 3)
         }
       }
     }
@@ -260,11 +277,18 @@ export default {
     }
   },
   methods: {
-    toWaterfallPctUi (raw, defaultPct) {
-      if (raw == null || raw === '') return defaultPct
-      const n = Number(raw)
-      if (!Number.isFinite(n)) return defaultPct
-      return n > 0 && n <= 1 ? n * 100 : n
+    formatWaterfallPct (v) {
+      return `${formatPercentDisplay(v, 2)}%`
+    },
+    parseWaterfallPct (v) {
+      const n = parsePercentInput(v, 4)
+      return n == null ? '' : n
+    },
+    onWaterfallPctChange (val) {
+      if (val != null && val !== '') {
+        this.form.waterfallDropPct = roundTo(Number(val), 4)
+      }
+      this.emit()
     },
     handleAmountManualChange () {
       this.capitalLinked = false
@@ -314,7 +338,7 @@ export default {
       const payload = {
         ...this.form,
         waterfallDropPct: this.form.waterfallProtection
-          ? Number(this.form.waterfallDropPct || 3) / 100
+          ? roundTo(Number(this.form.waterfallDropPct || 3), 4) / 100
           : undefined
       }
       delete payload.gridExecutionMode
