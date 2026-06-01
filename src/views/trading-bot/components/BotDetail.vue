@@ -134,32 +134,6 @@
             </div>
           </div>
         </div>
-        <div v-if="positionMetaHint" class="hedge-ledger-hint">
-          <a-icon type="book" />
-          <span>{{ positionMetaHint }}</span>
-        </div>
-        <div v-if="exchangeSnapshot" class="hedge-exchange-snapshot">
-          <div class="hedge-exchange-snapshot__title">
-            <a-icon type="bank" />
-            {{ $t('trading-bot.detail.exchangeSnapshotTitle') }}
-          </div>
-          <div class="hedge-exchange-snapshot__legs">
-            <span>{{ $t('trading-bot.detail.longLeg') }}: {{ formatLegSize(exchangeLongLeg) }}</span>
-            <span class="hedge-exchange-snapshot__sep">·</span>
-            <span>{{ $t('trading-bot.detail.shortLeg') }}: {{ formatLegSize(exchangeShortLeg) }}</span>
-            <span v-if="exchangeModeLabel" class="hedge-exchange-snapshot__mode">
-              · {{ exchangeModeLabel }}
-            </span>
-          </div>
-        </div>
-        <a-alert
-          v-if="ledgerExchangeMismatch"
-          type="warning"
-          show-icon
-          class="hedge-mismatch-alert"
-          :message="$t('trading-bot.detail.ledgerExchangeMismatchTitle')"
-          :description="$t('trading-bot.detail.ledgerExchangeMismatchDesc')"
-        />
       </div>
     </a-card>
 
@@ -527,8 +501,6 @@ export default {
       hedgeTrades: [],
       hedgeLoading: false,
       hedgeTimer: null,
-      positionMeta: null,
-      exchangeSnapshot: null,
       restingOrders: [],
       restingLoading: false,
       restingTimer: null
@@ -659,42 +631,6 @@ export default {
       if (override != null && override !== '') return `${override}s`
       // Backend default: 1s for grid/dca, 10s otherwise (see trading_executor.py).
       return this.isGridLikeBot ? '1s' : '10s'
-    },
-    positionMetaHint () {
-      const meta = this.positionMeta
-      if (!meta || typeof meta !== 'object') return ''
-      const loc = String((this.$i18n && this.$i18n.locale) || 'zh-CN').toLowerCase()
-      if (loc.startsWith('zh')) return meta.hint_zh || meta.hint_en || ''
-      return meta.hint_en || meta.hint_zh || ''
-    },
-    exchangeLongLeg () {
-      const sz = parseFloat(this.exchangeSnapshot?.long_size || 0)
-      return { size: sz > 0 ? sz : 0 }
-    },
-    exchangeShortLeg () {
-      const sz = parseFloat(this.exchangeSnapshot?.short_size || 0)
-      return { size: sz > 0 ? sz : 0 }
-    },
-    exchangeModeLabel () {
-      const label = String(this.exchangeSnapshot?.position_mode_label || '').trim()
-      if (!label) return ''
-      const key = `trading-bot.detail.exchangePosMode.${label}`
-      const t = this.$t(key)
-      return t !== key ? t : label
-    },
-    ledgerExchangeMismatch () {
-      if (!this.exchangeSnapshot || !this.isGridBot) return false
-      const exLong = parseFloat(this.exchangeSnapshot.long_size || 0)
-      const exShort = parseFloat(this.exchangeSnapshot.short_size || 0)
-      const ledgerLong = parseFloat(this.longLeg?.size || 0)
-      const ledgerShort = parseFloat(this.shortLeg?.size || 0)
-      const eps = 1e-8
-      const exFlat = exLong <= eps && exShort <= eps
-      const ledgerOpen = ledgerLong > eps || ledgerShort > eps
-      if (exFlat && ledgerOpen) return true
-      if (Math.abs(exLong - ledgerLong) > Math.max(ledgerLong, exLong, 1e-6) * 0.05 && ledgerLong > eps) return true
-      if (Math.abs(exShort - ledgerShort) > Math.max(ledgerShort, exShort, 1e-6) * 0.05 && ledgerShort > eps) return true
-      return false
     },
     gp () {
       const bp = this.botParams
@@ -979,8 +915,6 @@ export default {
         ])
         if (posRes && posRes.code === 1) {
           this.hedgePositions = (posRes.data && (posRes.data.positions || posRes.data.items)) || []
-          this.positionMeta = (posRes.data && posRes.data.position_meta) || null
-          this.exchangeSnapshot = (posRes.data && posRes.data.exchange_snapshot) || null
         }
         if (trdRes && trdRes.code === 1) {
           this.hedgeTrades = (trdRes.data && (trdRes.data.trades || trdRes.data.items)) || []
@@ -1366,25 +1300,6 @@ export default {
     .hedge-cell__size .loss { color: #f5222d; }
   }
 }
-.hedge-ledger-hint {
-  display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; padding: 8px 12px;
-  font-size: 12px; line-height: 1.55; color: #8c8c8c;
-  background: rgba(24, 144, 255, 0.05); border-radius: 8px; border: 1px dashed rgba(24, 144, 255, 0.18);
-  .anticon { color: #1890ff; margin-top: 2px; flex-shrink: 0; }
-}
-.hedge-exchange-snapshot {
-  margin-top: 10px; padding: 10px 12px; border-radius: 8px;
-  background: rgba(82, 196, 26, 0.04); border: 1px solid rgba(82, 196, 26, 0.15);
-  &__title {
-    display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #595959; margin-bottom: 6px;
-    .anticon { color: #52c41a; }
-  }
-  &__legs { font-size: 12px; color: #595959; font-family: 'SF Mono', monospace; }
-  &__sep { margin: 0 6px; color: #d9d9d9; }
-  &__mode { color: #8c8c8c; font-family: inherit; }
-}
-.hedge-mismatch-alert { margin-top: 10px; }
-
 /* ===================== 暗黑模式 ===================== */
 .theme-dark {
   .detail-header-card, .detail-tabs-card, .hedge-summary-card { background: #1f1f1f; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
