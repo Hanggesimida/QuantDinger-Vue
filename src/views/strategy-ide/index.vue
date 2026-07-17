@@ -7,6 +7,11 @@
           <indicator-ide />
         </a-tab-pane>
 
+        <a-tab-pane key="portfolio">
+          <span slot="tab"><a-icon type="apartment" /> {{ text.portfolio }}</span>
+          <portfolio-strategy :is-dark="isDarkTheme" />
+        </a-tab-pane>
+
         <a-tab-pane key="script">
           <span slot="tab"><a-icon type="code" /> {{ text.script }}</span>
 
@@ -338,6 +343,7 @@ import { mapState } from 'vuex'
 import IndicatorIde from '@/views/indicator-ide'
 import StrategyEditor from '@/views/trading-assistant/components/StrategyEditor.vue'
 import StrategyBacktestPanel from '@/components/StrategyBacktestPanel.vue'
+import PortfolioStrategy from '@/views/strategy-ide/components/PortfolioStrategy.vue'
 import {
   createScriptSource,
   deleteScriptSource,
@@ -367,7 +373,7 @@ def on_bar(ctx, bar):
 
 export default {
   name: 'StrategyIDE',
-  components: { IndicatorIde, StrategyEditor, StrategyBacktestPanel },
+  components: { IndicatorIde, StrategyEditor, StrategyBacktestPanel, PortfolioStrategy },
   data () {
     return {
       activeMode: 'indicator',
@@ -490,6 +496,7 @@ export default {
     text () {
       const zh = {
         indicator: '指标编写',
+        portfolio: '组合策略',
         script: '交易脚本',
         libraryTitle: '脚本源码库',
         libraryDesc: '在这里切换、编辑、回测和发布脚本源码。运行时选择标的、现货/合约、方向、投入金额和杠杆。',
@@ -574,6 +581,7 @@ export default {
       }
       const en = {
         indicator: 'Indicator Builder',
+        portfolio: 'Portfolio Strategy',
         script: 'Trading Script',
         libraryTitle: 'Script Source Library',
         libraryDesc: 'Switch, edit, backtest, and publish script source here. Runs ask for symbol, spot/swap, direction, investment amount, and leverage.',
@@ -668,6 +676,7 @@ export default {
     window.addEventListener('keydown', this._scriptSaveShortcutListener, true)
     const tab = String((this.$route.query && this.$route.query.tab) || '').toLowerCase()
     if (tab === 'script') this.activeMode = 'script'
+    else if (tab === 'portfolio') this.activeMode = 'portfolio'
     const template = String((this.$route.query && this.$route.query.template) || '').trim()
     if (template) {
       this.scriptTemplateKey = template
@@ -687,6 +696,7 @@ export default {
     activeMode (mode) {
       const query = { ...(this.$route.query || {}) }
       if (mode === 'script') query.tab = 'script'
+      else if (mode === 'portfolio') query.tab = 'portfolio'
       else delete query.tab
       this.$router.replace({ path: '/strategy-ide', query }).catch(() => {})
     },

@@ -3,6 +3,8 @@ import { getMarketModules } from '@/api/marketModules'
 export const FALLBACK_MARKET_MODULES = [
   { key: 'Crypto', label: 'Crypto', enabled: true, features: ['research', 'backtest', 'paper', 'live'] },
   { key: 'USStock', label: 'US Stocks', enabled: true, features: ['research', 'backtest', 'paper', 'live'] },
+  { key: 'CNStock', label: 'China A-Shares', enabled: true, features: ['research', 'backtest', 'paper'] },
+  { key: 'HKStock', label: 'Hong Kong Stocks', enabled: true, features: ['research', 'backtest', 'paper'] },
   { key: 'Forex', label: 'Forex', enabled: true, features: ['research', 'backtest', 'paper', 'live'] }
 ]
 

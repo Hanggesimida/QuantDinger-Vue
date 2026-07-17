@@ -187,3 +187,23 @@ export function formatStrategyLogTime (input, opts = {}) {
     timeZone: opts.timeZone
   })
 }
+
+/**
+ * Format a CN A-share / Quant Agent calendar timestamp.
+ *
+ * Backend portfolio trades use Asia/Shanghai local dates (``YYYY-MM-DD``) or
+ * naive datetimes that already represent Shanghai wall clock — NOT UTC.
+ * Passing them through ``formatBacktestTime`` would treat them as UTC and
+ * shift CN users +8 hours.
+ */
+export function formatShanghaiMarketTime (input, opts = {}) {
+  if (input == null || input === '') return opts.fallback != null ? opts.fallback : '-'
+  const s = String(input).trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  const naive = /^\d{4}[-/]\d{2}[-/]\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(s) &&
+    !/[zZ]|[+-]\d{2}:?\d{2}$/.test(s)
+  if (naive) {
+    return s.replace('T', ' ').replace(/\//g, '-')
+  }
+  return formatBacktestTime(input, opts)
+}
