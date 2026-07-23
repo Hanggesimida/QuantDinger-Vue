@@ -7,33 +7,27 @@ export const asyncRouterMap = [
     name: 'index',
     component: BasicLayout,
     meta: { title: 'menu.home' },
-    redirect: '/ai-asset-analysis',
+    redirect: '/strategy-center',
     children: [
-      // AI asset analysis landing page.
-      // keepAlive: true so the heavy market-data fetches (sentiment / indices /
-      // heatmap / calendar / opportunities / watchlist prices) only run on the
-      // first visit. The component handles its own "data is stale" refresh in
-      // `activated()`. Disabling this again will reintroduce a 1~3s cold start
-      // every time the user navigates back here.
-      {
-        path: '/ai-asset-analysis',
-        name: 'AIAssetAnalysis',
-        component: () => import('@/views/ai-asset-analysis'),
-        meta: { title: 'menu.dashboard.aiAssetAnalysis', keepAlive: true, icon: 'appstore', permission: ['dashboard'] }
-      },
-      // Unified strategy workspace entry.
+      // Unified strategy workspace entry (default home for internal deployments).
       {
         path: '/strategy-center',
         name: 'StrategyCenter',
         component: () => import('@/views/strategy-center'),
         meta: { title: 'menu.dashboard.strategyCenter', keepAlive: true, icon: 'cluster', permission: ['dashboard'] }
       },
-      // Indicator marketplace.
       {
-        path: '/indicator-community',
-        name: 'IndicatorCommunity',
-        component: () => import('@/views/indicator-community'),
-        meta: { title: 'menu.dashboard.community', keepAlive: false, icon: 'shop', permission: ['dashboard'] }
+        path: '/strategy-library',
+        name: 'StrategyLibrary',
+        component: () => import('@/views/strategy-library'),
+        meta: { title: 'menu.dashboard.strategyLibrary', keepAlive: true, icon: 'cloud-server', permission: ['dashboard'] }
+      },
+      // AI asset analysis — kept but not the default landing page.
+      {
+        path: '/ai-asset-analysis',
+        name: 'AIAssetAnalysis',
+        component: () => import('@/views/ai-asset-analysis'),
+        meta: { title: 'menu.dashboard.aiAssetAnalysis', keepAlive: true, icon: 'appstore', permission: ['dashboard'] }
       },
       // Strategy IDE.
       {
@@ -141,12 +135,16 @@ export const asyncRouterMap = [
         hidden: true,
         meta: { title: 'menu.dashboard.portfolio', keepAlive: true, icon: 'fund', permission: ['dashboard'] }
       },
-      // Billing.
+      // SaaS billing / indicator marketplace — retired for internal deployments.
       {
         path: '/billing',
-        name: 'Billing',
-        component: () => import('@/views/billing'),
-        meta: { title: 'menu.billing', keepAlive: false, icon: 'wallet', permission: ['dashboard'] }
+        redirect: '/strategy-center',
+        hidden: true
+      },
+      {
+        path: '/indicator-community',
+        redirect: '/strategy-library',
+        hidden: true
       },
       // User profile. Admin-only items follow the menu divider.
       {

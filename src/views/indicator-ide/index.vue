@@ -37,7 +37,7 @@
                       @click="handleDeleteIndicator"
                     ><a-icon type="delete" /></a-button>
                   </a-tooltip>
-                  <a-tooltip :title="selectedIndicatorIsPurchased ? $t('indicatorIde.publishBlockedPurchased') : $t('dashboard.indicator.action.publish')">
+                  <a-tooltip :title="selectedIndicatorIsPurchased ? $t('indicatorIde.publishBlockedPurchased') : $t('strategyLibrary.publishAction')">
                     <a-button size="small" :disabled="!selectedIndicatorId || selectedIndicatorIsPurchased" @click="handlePublishIndicator"><a-icon type="cloud-upload" /></a-button>
                   </a-tooltip>
                   <a-tooltip :title="$t('dashboard.indicator.action.createStrategy')">
@@ -208,7 +208,7 @@
                   <a-icon v-if="!aiGenerating" type="robot" />
                   {{ aiGenerating ? $t('indicatorIde.generating') : $t('indicatorIde.generateCode') }}
                 </a-button>
-                <div class="ai-helper-links">
+                <div v-if="false" class="ai-helper-links">
                   <a @click.prevent="goToIndicatorMarket">{{ $t('indicatorIde.goIndicatorMarket') }}</a>
                 </div>
               </div>
@@ -1480,10 +1480,10 @@
       </div>
     </a-drawer>
     <a-modal
-      :title="publishIndicator && publishIndicator.publish_to_community ? $t('dashboard.indicator.publish.editTitle') : $t('dashboard.indicator.publish.title')"
+      :title="$t('strategyLibrary.publishModalTitle')"
       :visible="showPublishModal"
       :confirmLoading="publishing"
-      :okText="publishIndicator && publishIndicator.publish_to_community ? $t('dashboard.indicator.publish.update') : $t('dashboard.indicator.publish.confirm')"
+      :okText="$t('strategyLibrary.publishConfirm')"
       :cancelText="$t('dashboard.indicator.editor.cancel')"
       :get-container="ideModalGetContainer"
       :wrap-class-name="isDarkTheme ? 'ide-modal-wrap ide-modal-wrap--dark' : 'ide-modal-wrap'"
@@ -1494,36 +1494,17 @@
         type="info"
         show-icon
         style="margin-bottom: 16px;"
-        :message="$t('dashboard.indicator.publish.hint')"
+        :message="$t('strategyLibrary.publishHint')"
       />
       <div class="publish-form">
-        <div class="field-label">{{ $t('dashboard.indicator.publish.pricingType') }}</div>
-        <a-radio-group v-model="publishPricingType">
-          <a-radio value="free">{{ $t('dashboard.indicator.publish.free') }}</a-radio>
-          <a-radio value="paid">{{ $t('dashboard.indicator.publish.paid') }}</a-radio>
-        </a-radio-group>
-        <div v-if="publishPricingType === 'paid'" style="margin-top: 12px;">
-          <div class="field-label">{{ $t('dashboard.indicator.publish.price') }}</div>
-          <a-input-number v-model="publishPrice" :min="0" :precision="2" style="width: 100%" />
-          <div style="margin-top: 10px;">
-            <a-switch v-model="publishVipFree" />
-            <span style="margin-left: 8px;">{{ $t('dashboard.indicator.publish.vipFree') }}</span>
-          </div>
-          <div class="publish-hint">{{ $t('dashboard.indicator.publish.vipFreeHint') }}</div>
-        </div>
-        <div style="margin-top: 12px;">
-          <div class="field-label">{{ $t('dashboard.indicator.publish.description') }}</div>
-          <a-textarea
-            v-model="publishDescription"
-            :rows="4"
-            :placeholder="$t('dashboard.indicator.publish.descriptionPlaceholder')"
-          />
-        </div>
-        <div v-if="publishIndicator && publishIndicator.publish_to_community" style="margin-top: 16px;">
-          <a-button type="danger" ghost @click="handleUnpublish" :loading="unpublishing">
-            {{ $t('dashboard.indicator.publish.unpublish') }}
-          </a-button>
-        </div>
+        <div class="field-label">{{ $t('strategyLibrary.publishTitle') }}</div>
+        <a-input v-model="publishLibraryTitle" :placeholder="$t('strategyLibrary.publishTitlePlaceholder')" />
+        <div class="field-label" style="margin-top: 12px;">{{ $t('strategyLibrary.publishDescription') }}</div>
+        <a-textarea
+          v-model="publishDescription"
+          :rows="4"
+          :placeholder="$t('strategyLibrary.publishDescriptionPlaceholder')"
+        />
       </div>
     </a-modal>
     <a-modal
@@ -1562,6 +1543,7 @@ import storage from 'store'
 import { ACCESS_TOKEN } from '@/store/mutation-types'
 import { baseMixin } from '@/store/app-mixin'
 import request from '@/utils/request'
+import { publishStrategyLibrary } from '@/api/strategyLibrary'
 import { formatBacktestTime } from '@/utils/userTime'
 import { resolveExperimentIndicatorParams } from '@/utils/experimentOverrides'
 import { loadEnabledMarketOptions, firstMarketValue } from '@/utils/marketModules'
@@ -1721,6 +1703,7 @@ export default {
       savingIndicator: false,
       deletingIndicator: false,
       showPublishModal: false,
+      publishLibraryTitle: '',
       showSaveAsModal: false,
       saveAsName: '',
       savingAs: false,
@@ -2779,11 +2762,27 @@ export default {
         if (res && res.data && Array.isArray(res.data)) {
           this.indicators = res.data.map(item => ({ ...item, type: 'python' }))
         }
+        this.applyIndicatorIdFromRoute()
       } catch (e) {
         console.warn('Load indicators failed:', e)
       } finally {
         this.loadingIndicators = false
         this.pruneChartVisibleIndicatorIds()
+      }
+    },
+    applyIndicatorIdFromRoute () {
+      const q = this.$route && this.$route.query ? this.$route.query : {}
+      const raw = q.id || q.indicator_id || q.indicatorId
+      const id = Number(raw || 0)
+      if (!id) return
+      const found = (this.indicators || []).find(item => Number(item.id) === id)
+      if (!found) return
+      this.selectedIndicatorId = id
+      if (!this.chartVisibleIndicatorIds.includes(id)) {
+        this.chartVisibleIndicatorIds = [id].concat(this.chartVisibleIndicatorIds || [])
+      }
+      if (typeof this.onIndicatorChange === 'function') {
+        this.onIndicatorChange(id)
       }
     },
     pruneChartVisibleIndicatorIds () {
@@ -2813,6 +2812,7 @@ export default {
     },
 
     autoSelectFirstIndicator () {
+      this.applyIndicatorIdFromRoute()
       if (this.indicators.length > 0 && !this.selectedIndicatorId) {
         this.selectedIndicatorId = this.indicators[0].id
         if (!this.chartVisibleIndicatorIds.length) {
@@ -5159,7 +5159,7 @@ export default {
       }
     },
     goToIndicatorMarket () {
-      this.$router.push('/indicator-community')
+      this.$router.push('/strategy-library')
     },
     buildNewIndicatorStarterCode () {
       const label = moment().format('YYYY-MM-DD HH:mm')
@@ -5266,10 +5266,8 @@ export default {
       }
       const indicator = this.selectedIndicatorObj || {}
       this.publishIndicator = { ...indicator, code: this.currentCode || indicator.code || '' }
-      this.publishPricingType = indicator.pricing_type || 'free'
-      this.publishPrice = indicator.price || 10
+      this.publishLibraryTitle = indicator.name || ''
       this.publishDescription = indicator.description || ''
-      this.publishVipFree = !!indicator.vip_free
       this.showPublishModal = true
     },
     handleCreateStrategyFromIndicator () {
@@ -5279,66 +5277,24 @@ export default {
       if (!this.userId || !this.publishIndicator) return
       this.publishing = true
       try {
-        const res = await request({
-          url: '/api/indicator/saveIndicator',
-          method: 'post',
-          data: {
-            userid: this.userId,
-            id: this.publishIndicator.id,
-            code: this.currentCode || this.publishIndicator.code,
-            name: this.publishIndicator.name,
-            description: this.publishDescription,
-            publishToCommunity: true,
-            pricingType: this.publishPricingType,
-            price: this.publishPricingType === 'paid' ? this.publishPrice : 0,
-            vipFree: this.publishPricingType === 'paid' ? this.publishVipFree : false
-          }
+        const res = await publishStrategyLibrary({
+          asset_type: 'indicator',
+          source_id: this.publishIndicator.id,
+          title: String(this.publishLibraryTitle || '').trim() || this.publishIndicator.name,
+          description: String(this.publishDescription || '').trim()
         })
         if (res && res.code === 1) {
-          this.$message.success(this.$t('dashboard.indicator.publish.success'))
+          this.$message.success(this.$t('strategyLibrary.publishSuccess'))
           this.showPublishModal = false
           this.publishIndicator = null
-          await this.loadIndicators()
+          this.$router.push('/strategy-library').catch(() => {})
         } else {
-          this.$message.error((res && res.msg) || this.$t('dashboard.indicator.publish.failed'))
+          this.$message.error((res && res.msg) || this.$t('strategyLibrary.publishFailed'))
         }
       } catch (error) {
-        this.$message.error(this.$t('dashboard.indicator.publish.failed') + ': ' + (error.message || ''))
+        this.$message.error(this.$t('strategyLibrary.publishFailed') + ': ' + (error.message || ''))
       } finally {
         this.publishing = false
-      }
-    },
-    async handleUnpublish () {
-      if (!this.userId || !this.publishIndicator) return
-      this.unpublishing = true
-      try {
-        const res = await request({
-          url: '/api/indicator/saveIndicator',
-          method: 'post',
-          data: {
-            userid: this.userId,
-            id: this.publishIndicator.id,
-            code: this.currentCode || this.publishIndicator.code,
-            name: this.publishIndicator.name,
-            description: this.publishIndicator.description,
-            publishToCommunity: false,
-            pricingType: 'free',
-            price: 0,
-            vipFree: false
-          }
-        })
-        if (res && res.code === 1) {
-          this.$message.success(this.$t('dashboard.indicator.publish.unpublishSuccess'))
-          this.showPublishModal = false
-          this.publishIndicator = null
-          await this.loadIndicators()
-        } else {
-          this.$message.error((res && res.msg) || this.$t('dashboard.indicator.publish.unpublishFailed'))
-        }
-      } catch (error) {
-        this.$message.error(this.$t('dashboard.indicator.publish.unpublishFailed'))
-      } finally {
-        this.unpublishing = false
       }
     },
 

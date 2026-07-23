@@ -63,7 +63,7 @@
               {{ $t('trading-bot.action.cloneAsScript') }}
             </a-button>
           </a-tooltip>
-          <a-button @click="$emit('publish', bot)">
+          <a-button v-if="false" @click="$emit('publish', bot)">
             <a-icon type="shop" />
             {{ $t('trading-bot.action.publishToMarket') }}
           </a-button>

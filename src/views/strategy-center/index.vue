@@ -20,6 +20,9 @@
         <a-button type="primary" class="sc-action-btn sc-action-btn--primary" @click="go('/strategy-ide')">
           <a-icon type="code" /> {{ $t('strategyCenter.header.openIde') }}
         </a-button>
+        <a-button class="sc-action-btn" @click="go('/strategy-library')">
+          <a-icon type="cloud-server" /> {{ $t('strategyCenter.header.strategyLibrary') }}
+        </a-button>
         <a-button class="sc-action-btn" @click="go('/trading-bot')">
           <a-icon type="robot" /> {{ $t('strategyCenter.header.createBot') }}
         </a-button>

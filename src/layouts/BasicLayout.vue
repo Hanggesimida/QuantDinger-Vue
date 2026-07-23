@@ -474,7 +474,7 @@ export default {
   methods: {
     i18nRender,
     buildTopMenuGroups (routes) {
-      const accountMenuPaths = ['/billing', '/profile']
+      const accountMenuPaths = ['/profile']
       const strategyDetailPaths = ['/strategy-live', '/strategy-script']
       const visibleRoutes = routes.filter(route => {
         return !route.hidden &&
@@ -502,7 +502,7 @@ export default {
           path: '/menu-group/strategy-lab',
           title: this.$t('menu.group.strategyLab') || 'Strategy Lab',
           icon: 'experiment',
-          paths: ['/strategy-ide', '/trading-bot', '/indicator-community']
+          paths: ['/strategy-ide', '/trading-bot', '/strategy-library']
         },
         {
           name: 'MenuGroupLiveMonitor',

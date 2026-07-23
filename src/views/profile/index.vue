@@ -46,8 +46,8 @@
         </a-card>
       </a-col>
 
-      <!-- Right Column: Credits and Referral Cards -->
-      <a-col :xs="24" :md="16" class="right-cards-col">
+      <!-- Right Column: Credits and Referral Cards (hidden for internal deployments) -->
+      <a-col v-if="false" :xs="24" :md="16" class="right-cards-col">
         <a-row :gutter="16" class="right-cards-row">
           <a-col :xs="24" :md="12">
             <a-card :bordered="false" class="credits-card">
@@ -113,7 +113,7 @@
                   <div class="link-box">
                     <a-input
                       :value="referralLink"
-                      readonly
+                      read-only
                       size="small"
                     >
                       <a-tooltip slot="suffix" :title="$t('profile.referral.copyLink') || '复制链接'">
@@ -333,7 +333,7 @@
               </div>
             </a-tab-pane>
 
-            <a-tab-pane key="credits" :tab="$t('profile.creditsLog') || '消费记录'">
+            <a-tab-pane v-if="false" key="credits" :tab="$t('profile.creditsLog') || '消费记录'">
               <a-table
                 :columns="creditsLogColumns"
                 :dataSource="creditsLog"
@@ -569,7 +569,7 @@
               </div>
             </a-tab-pane>
 
-            <a-tab-pane key="referrals" :tab="$t('profile.referral.listTab') || '邀请列表'">
+            <a-tab-pane v-if="false" key="referrals" :tab="$t('profile.referral.listTab') || '邀请列表'">
               <a-table
                 :columns="referralColumns"
                 :dataSource="referralData.list || []"
@@ -658,7 +658,7 @@
           <label>{{ $t('profile.mfa.manualKey') }}</label>
           <a-input
             :value="mfaSetup.secret_display || mfaSetup.secret"
-            readonly
+            read-only
             class="mfa-secret-input"
           >
             <a-icon slot="prefix" type="key" />
@@ -1084,7 +1084,8 @@ export default {
     // jump straight to a specific tab.
     this.applyTabFromQuery(this.$route.query.tab)
     this.loadProfile()
-    this.loadReferrals()
+    // Referral UI is hidden for internal deployments; skip the API call so
+    // the retired /my-referrals endpoint does not trigger a 403 toast.
   },
   beforeDestroy () {
     if (this.pwdCodeTimer) {
@@ -1446,7 +1447,7 @@ export default {
       this.loadCreditsLog()
     },
 
-    // Referral methods
+    // Referral methods (feature retired; keep no-op-safe for deep links)
     async loadReferrals () {
       this.referralLoading = true
       try {
@@ -1454,7 +1455,7 @@ export default {
           page: this.referralPagination.current,
           page_size: this.referralPagination.pageSize
         })
-        if (res.code === 1) {
+        if (res && res.code === 1 && res.data) {
           this.referralData = {
             list: res.data.list || [],
             total: res.data.total || 0,
@@ -1464,8 +1465,9 @@ export default {
           }
           this.referralPagination.total = res.data.total || 0
         }
+        // referral_disabled / empty payload: stay silent — UI is already hidden
       } catch (e) {
-        this.$message.error('Failed to load referral data')
+        // Do not toast: backend may still return 403 for retired referral program
       } finally {
         this.referralLoading = false
       }

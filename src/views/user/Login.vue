@@ -182,12 +182,12 @@
 
               <div class="code-login-hint">
                 <a-icon type="info-circle" />
-                <span>{{ $t('user.login.codeLoginHint') || 'New users will be automatically registered' }}</span>
+                <span>{{ $t('user.login.codeLoginExistingHint') || 'Use the email on your existing account' }}</span>
               </div>
             </a-form>
 
-            <!-- OAuth Login -->
-            <div v-if="hasOAuth" class="oauth-section">
+            <!-- OAuth Login (disabled for internal deployments) -->
+            <div v-if="false" class="oauth-section">
               <a-divider>{{ $t('user.login.orLoginWith') || 'Or login with' }}</a-divider>
               <div class="oauth-buttons">
                 <a-button
@@ -215,8 +215,8 @@
             </div>
           </a-tab-pane>
 
-          <!-- Register Tab -->
-          <a-tab-pane v-if="securityConfig.registration_enabled" key="register" :tab="$t('user.register.tab') || 'Register'">
+          <!-- Register Tab (disabled for internal deployments) -->
+          <a-tab-pane v-if="false" key="register" :tab="$t('user.register.tab') || 'Register'">
             <a-form
               id="formRegister"
               class="auth-form"
@@ -675,11 +675,11 @@ export default {
       legalAgreed: true,
       legalError: false,
 
-      // Security config
+      // Security config (internal: registration / OAuth forced off)
       securityConfig: {
         turnstile_enabled: false,
         turnstile_site_key: '',
-        registration_enabled: true,
+        registration_enabled: false,
         oauth_google_enabled: false,
         oauth_github_enabled: false
       },
@@ -749,8 +749,9 @@ export default {
     }
   },
   computed: {
+    // Internal deployment: never surface OAuth / public signup UI.
     hasOAuth () {
-      return this.securityConfig.oauth_google_enabled || this.securityConfig.oauth_github_enabled
+      return false
     },
     showCodeLoginTurnstile () {
       return this.securityConfig.turnstile_enabled &&
@@ -823,7 +824,14 @@ export default {
       try {
         const res = await getSecurityConfig()
         if (res.code === 1 && res.data) {
-          this.securityConfig = { ...this.securityConfig, ...res.data }
+          this.securityConfig = {
+            ...this.securityConfig,
+            ...res.data,
+            // Internal deployment: public signup / OAuth stay off regardless of server flags.
+            registration_enabled: false,
+            oauth_google_enabled: false,
+            oauth_github_enabled: false
+          }
         }
       } catch (e) {
         console.error('Failed to load security config:', e)

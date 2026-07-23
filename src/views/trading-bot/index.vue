@@ -27,10 +27,7 @@
           <p class="page-subtitle">{{ $t('trading-bot.pageSubtitle') }}</p>
         </div>
         <div class="page-header-right">
-          <a-button @click="goToMarketplace">
-            <a-icon type="shop" />
-            {{ $t('trading-bot.action.openMarketplace') }}
-          </a-button>
+          <!-- Marketplace retired for internal deployments -->
         </div>
       </div>
 

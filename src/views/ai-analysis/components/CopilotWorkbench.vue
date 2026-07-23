@@ -515,7 +515,7 @@ import {
 } from '@/api/market'
 import { aiGenerateStrategy } from '@/api/strategy'
 import { getEconomicCalendar } from '@/api/global-market'
-import { getMembershipPlans } from '@/api/billing'
+
 import { getMonitors, addMonitor, updateMonitor, deleteMonitor } from '@/api/portfolio'
 import { fastAnalyze } from '@/api/fast-analysis'
 import storage from 'store'
@@ -1141,11 +1141,8 @@ export default {
       }
     },
     async loadBilling () {
-      try {
-        const res = await getMembershipPlans()
-        const data = res.data || {}
-        this.billing = data.billing || data.billing_config || {}
-      } catch (_) {}
+      // Internal deployment: membership / credits billing API is retired.
+      this.billing = { billing_enabled: false, credits: 0 }
     },
     async loadCalendar (force = false) {
       this.loadingCalendar = true
@@ -1616,7 +1613,7 @@ export default {
       const allowed = [
         '/settings',
         '/broker-accounts',
-        '/billing',
+        '/strategy-center',
         '/profile',
         '/indicator-ide',
         '/strategy-ide',
@@ -3468,14 +3465,14 @@ export default {
           key: 'billing',
           icon: 'wallet',
           label: this.i18nText('aiCopilot.setup.action.billing', 'Top up'),
-          path: '/billing'
+          path: '/strategy-center'
         },
         credits: {
           key: 'profile-credits',
           icon: 'profile',
           label: this.i18nText('aiCopilot.setup.action.credits', 'View credit records'),
           path: '/profile',
-          query: { tab: 'credits' }
+          query: { tab: 'basic' }
         },
         login: {
           key: 'login',

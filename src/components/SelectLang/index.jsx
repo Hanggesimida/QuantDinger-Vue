@@ -4,60 +4,25 @@ import { Icon, Menu, Dropdown } from 'ant-design-vue'
 import { i18nRender } from '@/locales'
 import i18nMixin from '@/store/i18n-mixin'
 
+// Internal deployment: keep Simplified Chinese + English only.
 const locales = [
-  'en-US',
-  'ru-RU',
-  'ja-JP',
-  'ko-KR',
-  'vi-VN',
-  'th-TH',
-  'ar-SA',
-  'fr-FR',
-  'de-DE',
-  'zh-TW',
-  'zh-CN'
+  'zh-CN',
+  'en-US'
 ]
 
 const languageLabels = {
   'zh-CN': '\u7b80\u4f53\u4e2d\u6587',
-  'zh-TW': '\u7e41\u9ad4\u4e2d\u6587',
-  'en-US': 'English',
-  'ru-RU': '\u0420\u0443\u0441\u0441\u043a\u0438\u0439',
-  'ja-JP': '\u65e5\u672c\u8a9e',
-  'ko-KR': '\ud55c\uad6d\uc5b4',
-  'vi-VN': 'Ti\u1ebfng Vi\u1ec7t',
-  'th-TH': '\u0e44\u0e17\u0e22',
-  'ar-SA': '\u0627\u0644\u0639\u0631\u0628\u064a\u0629',
-  'fr-FR': 'Fran\u00e7ais',
-  'de-DE': 'Deutsch'
+  'en-US': 'English'
 }
 
 const languageIcons = {
   'zh-CN': 'CN',
-  'zh-TW': 'TW',
-  'en-US': 'EN',
-  'ru-RU': 'RU',
-  'ja-JP': 'JA',
-  'ko-KR': 'KO',
-  'vi-VN': 'VI',
-  'th-TH': 'TH',
-  'ar-SA': 'AR',
-  'fr-FR': 'FR',
-  'de-DE': 'DE'
+  'en-US': 'EN'
 }
 
 const languageShortLabels = {
   'zh-CN': '\u4e2d\u6587',
-  'zh-TW': '\u7e41\u4e2d',
-  'en-US': 'EN',
-  'ru-RU': 'RU',
-  'ja-JP': 'JA',
-  'ko-KR': 'KO',
-  'vi-VN': 'VI',
-  'th-TH': 'TH',
-  'ar-SA': 'AR',
-  'fr-FR': 'FR',
-  'de-DE': 'DE'
+  'en-US': 'EN'
 }
 
 const SelectLang = {

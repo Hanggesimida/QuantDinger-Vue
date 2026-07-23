@@ -106,7 +106,7 @@
                         :loading="savingScript || publishingScript"
                         @click="openPublishScriptModal"
                       >
-                        <a-icon type="shop" />
+                        <a-icon type="cloud-upload" />
                       </a-button>
                     </a-tooltip>
                     <a-tooltip v-if="scriptDraftStrategyId" :title="text.deleteScript">
@@ -271,17 +271,6 @@
         <label class="field-label">{{ text.publishName }}</label>
         <a-input v-model="publishForm.name" :placeholder="text.publishNamePlaceholder" />
 
-        <label class="field-label field-label--spaced">{{ text.publishPricingType }}</label>
-        <a-radio-group v-model="publishForm.pricingType">
-          <a-radio value="free">{{ text.publishFree }}</a-radio>
-          <a-radio value="paid">{{ text.publishPaid }}</a-radio>
-        </a-radio-group>
-
-        <div v-if="publishForm.pricingType === 'paid'" class="publish-field">
-          <label class="field-label">{{ text.publishPrice }}</label>
-          <a-input-number v-model="publishForm.price" :min="0" :precision="2" style="width: 100%" />
-        </div>
-
         <label class="field-label field-label--spaced">{{ text.publishDescription }}</label>
         <a-textarea
           v-model="publishForm.description"
@@ -351,10 +340,10 @@ import {
   getScriptSourceList,
   getScriptSourceVersion,
   getScriptSourceVersions,
-  publishScriptSource,
   restoreScriptSourceVersion,
   updateScriptSource
 } from '@/api/strategy'
+import { publishStrategyLibrary } from '@/api/strategyLibrary'
 import { getWatchlist } from '@/api/market'
 
 const DEFAULT_SCRIPT_CODE = `"""
@@ -512,7 +501,7 @@ export default {
         updateScript: '更新脚本',
         saveAsNew: '另存为新脚本',
         createLive: '创建实盘',
-        publishScript: '发布到市场',
+        publishScript: '发布到策略库',
         deleteScript: '删除',
         refreshScripts: '刷新脚本列表',
         versionHistory: '历史版本',
@@ -531,21 +520,16 @@ export default {
         deleteConfirmDesc: '删除后不会删除已创建的实盘策略，但这些策略如果仍引用该源码将无法继续回测或运行。',
         deleteSuccess: '脚本源码已删除',
         deleteFailed: '删除脚本源码失败',
-        publishSuccess: '已提交到策略市场',
-        publishFailed: '发布脚本源码失败',
-        publishModalTitle: '发布脚本源码到市场',
+        publishSuccess: '已发布到内部策略库',
+        publishFailed: '发布到策略库失败',
+        publishModalTitle: '发布脚本到内部策略库',
         publishConfirm: '确认发布',
         cancel: '取消',
-        publishHint: '发布后用户购买的是脚本源码，可以再用该源码创建自己的策略实例。',
-        publishName: '市场展示名称',
-        publishNamePlaceholder: '例如 BTC 趋势跟随脚本',
-        publishPricingType: '价格类型',
-        publishFree: '免费',
-        publishPaid: '付费',
-        publishPrice: '价格',
-        publishDescription: '策略说明',
-        publishDescriptionPlaceholder: '说明适用市场、核心逻辑、风险边界和建议用法',
-        priceRequired: '付费发布需要填写大于 0 的价格',
+        publishHint: '发布后全公司账号都可浏览与拉取；系统会调用一次 AI 生成策略总结。',
+        publishName: '标题',
+        publishNamePlaceholder: '策略库中的展示名称',
+        publishDescription: '备注说明',
+        publishDescriptionPlaceholder: '可选：补充使用场景、注意点等',
         draftReady: '已选择脚本',
         runTarget: '本次运行标的',
         watchlistSymbol: '自选标的',
@@ -597,7 +581,7 @@ export default {
         updateScript: 'Update Script',
         saveAsNew: 'Save as New',
         createLive: 'Create Live',
-        publishScript: 'Publish',
+        publishScript: 'Publish to Library',
         deleteScript: 'Delete',
         refreshScripts: 'Refresh scripts',
         versionHistory: 'Version History',
@@ -616,21 +600,16 @@ export default {
         deleteConfirmDesc: 'Existing live strategies are not deleted, but strategies still referencing this source will no longer backtest or run.',
         deleteSuccess: 'Script source deleted',
         deleteFailed: 'Failed to delete script source',
-        publishSuccess: 'Submitted to marketplace',
-        publishFailed: 'Failed to publish script source',
-        publishModalTitle: 'Publish Script Source',
+        publishSuccess: 'Published to internal strategy library',
+        publishFailed: 'Failed to publish to strategy library',
+        publishModalTitle: 'Publish Script to Strategy Library',
         publishConfirm: 'Publish',
         cancel: 'Cancel',
-        publishHint: 'Buyers receive the script source and can create their own strategy instance from it.',
-        publishName: 'Marketplace Name',
-        publishNamePlaceholder: 'Example: BTC Trend Script',
-        publishPricingType: 'Pricing',
-        publishFree: 'Free',
-        publishPaid: 'Paid',
-        publishPrice: 'Price',
-        publishDescription: 'Description',
-        publishDescriptionPlaceholder: 'Describe supported markets, core logic, risk limits, and suggested usage',
-        priceRequired: 'Paid publishing requires a price greater than 0',
+        publishHint: 'All company accounts can browse and clone it. AI will generate a one-time summary.',
+        publishName: 'Title',
+        publishNamePlaceholder: 'Display name in the library',
+        publishDescription: 'Notes',
+        publishDescriptionPlaceholder: 'Optional: use cases, caveats, etc.',
         draftReady: 'Script selected',
         runTarget: 'Run Target',
         watchlistSymbol: 'Watchlist Symbol',
@@ -1188,24 +1167,18 @@ export default {
     async confirmPublishScriptSource () {
       const sourceId = this.scriptDraftStrategyId || await this.saveScriptStrategy(false)
       if (!sourceId) return
-      const pricingType = this.publishForm.pricingType === 'paid' ? 'paid' : 'free'
-      const price = Number(this.publishForm.price || 0)
-      if (pricingType === 'paid' && price <= 0) {
-        this.$message.warning(this.text.priceRequired)
-        return
-      }
       this.publishingScript = true
       try {
-        const res = await publishScriptSource({
-          sourceId,
-          name: String(this.publishForm.name || '').trim() || this.deriveScriptName(),
-          description: String(this.publishForm.description || '').trim(),
-          pricingType,
-          price: pricingType === 'paid' ? price : 0
+        const res = await publishStrategyLibrary({
+          asset_type: 'script',
+          source_id: sourceId,
+          title: String(this.publishForm.name || '').trim() || this.deriveScriptName(),
+          description: String(this.publishForm.description || '').trim()
         })
         if (res && res.code === 1) {
           this.$message.success(this.text.publishSuccess)
           this.showPublishModal = false
+          this.$router.push('/strategy-library').catch(() => {})
         } else {
           this.$message.error((res && res.msg) || this.text.publishFailed)
         }

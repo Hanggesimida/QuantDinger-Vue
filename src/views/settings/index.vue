@@ -679,6 +679,8 @@ export default {
     },
     sortedSchema () {
       const entries = Object.entries(this.schema)
+        // Internal: hide SaaS billing / credits settings group from the admin UI.
+        .filter(([key]) => key !== 'billing')
       entries.sort((a, b) => {
         const orderA = a[1].order || 999
         const orderB = b[1].order || 999

@@ -2,42 +2,40 @@ import Vue from 'vue'
 import VueI18n from 'vue-i18n'
 import storage from 'store'
 import moment from 'moment'
+import zhCN from './lang/zh-CN'
 import enUS from './lang/en-US'
 import copilotOverrides from './copilot-overrides'
 
 Vue.use(VueI18n)
 
-export const defaultLang = 'en-US'
+// Internal deployment default: Simplified Chinese.
+export const defaultLang = 'zh-CN'
 
 const messages = {
-  [defaultLang]: {
+  'zh-CN': {
+    ...zhCN,
+    ...(copilotOverrides['zh-CN'] || {})
+  },
+  'en-US': {
     ...enUS,
-    ...(copilotOverrides[defaultLang] || {})
+    ...(copilotOverrides['en-US'] || {})
   }
 }
 
 const localeLoaders = {
-  'ar-SA': () => import('./lang/ar-SA.js'),
-  'de-DE': () => import('./lang/de-DE.js'),
-  'fr-FR': () => import('./lang/fr-FR.js'),
-  'ja-JP': () => import('./lang/ja-JP.js'),
-  'ko-KR': () => import('./lang/ko-KR.js'),
-  'ru-RU': () => import('./lang/ru-RU.js'),
-  'th-TH': () => import('./lang/th-TH.js'),
-  'vi-VN': () => import('./lang/vi-VN.js'),
   'zh-CN': () => import('./lang/zh-CN.js'),
-  'zh-TW': () => import('./lang/zh-TW.js')
+  'en-US': () => import('./lang/en-US.js')
 }
 
 const i18n = new VueI18n({
   silentTranslationWarn: true,
   silentFallbackWarn: true,
   locale: defaultLang,
-  fallbackLocale: defaultLang,
+  fallbackLocale: 'en-US',
   messages
 })
 
-const loadedLanguages = [defaultLang]
+const loadedLanguages = ['zh-CN', 'en-US']
 
 function sanitizeLocaleMessage (message) {
   if (Array.isArray(message)) {
@@ -88,6 +86,10 @@ function mergeLocaleOverrides (lang) {
 }
 
 export async function loadLanguageAsync (lang = defaultLang) {
+  const supported = Object.keys(localeLoaders)
+  if (!supported.includes(lang)) {
+    lang = defaultLang
+  }
   storage.set('lang', lang)
   if (i18n.locale === lang) {
     mergeLocaleOverrides(lang)

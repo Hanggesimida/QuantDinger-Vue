@@ -1,8 +1,8 @@
 <template>
   <div :class="wrpCls">
-    <avatar-dropdown :menu="true" :current-user="currentUser" :class="prefixCls" />
-    <notice-icon :class="prefixCls" />
-    <select-lang :class="prefixCls" />
+    <avatar-dropdown :menu="true" :current-user="currentUser" />
+    <notice-icon />
+    <select-lang />
     <a-tooltip :title="$t('app.setting.tooltip')">
       <span :class="prefixCls" @click="handleSettingClick">
         <a-icon type="setting" style="font-size: 16px;" />

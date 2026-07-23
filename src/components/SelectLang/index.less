@@ -64,7 +64,7 @@ body.realdark {
   transition: all 0.3s;
 
   &.language-action {
-    gap: 4px;
+    gap: 0;
     min-width: 54px;
     padding: 0 10px;
   }
@@ -80,6 +80,7 @@ body.realdark {
     justify-content: center;
     width: 18px;
     height: 18px;
+    margin-right: 0;
     line-height: 18px;
     font-size: 17px !important;
     transform: none !important;
@@ -97,6 +98,7 @@ body.realdark {
     align-items: center;
     height: 18px;
     min-width: 22px;
+    margin-left: 8px;
     font-size: 13px;
     font-weight: 600;
     line-height: 18px;
@@ -112,8 +114,12 @@ body.realdark {
 
     &.language-action {
       min-width: 48px;
-      gap: 3px;
+      gap: 0;
       padding: 0 8px;
+
+      .language-action-label {
+        margin-left: 6px;
+      }
     }
   }
 }
